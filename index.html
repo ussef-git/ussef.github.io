@@ -2,68 +2,717 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Portfolio - Youssef</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio — Youssef Bouazza</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --cyan: #00f5ff;
+            --blue: #0066ff;
+            --purple: #7b2fff;
+            --bg: #020817;
+            --surface: #0a1628;
+            --border: rgba(0, 245, 255, 0.15);
+            --glow: 0 0 30px rgba(0, 245, 255, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            background: #0f172a;
+            font-family: 'Syne', sans-serif;
+            background: var(--bg);
             color: white;
-            text-align: center;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        .cursor {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: var(--cyan);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s;
+            box-shadow: 0 0 15px var(--cyan), 0 0 30px var(--cyan);
+        }
+        .cursor-ring {
+            position: fixed;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(0, 245, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: transform 0.15s ease, width 0.2s, height 0.2s, opacity 0.2s;
+        }
+
+        #canvas-bg {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            z-index: 1;
+            animation: scan 4s linear infinite;
+            opacity: 0.4;
+        }
+        @keyframes scan {
+            0% { top: -2px; }
+            100% { top: 100vh; }
+        }
+
+        main {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
 
         header {
-            padding: 40px;
-            background: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+            z-index: 2;
+            padding: 80px 0 60px;
+        }
+
+        .tag {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--cyan);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.2s forwards;
+        }
+        .tag::before { content: '> '; }
+
+        h1 {
+            font-size: clamp(3rem, 10vw, 7rem);
+            font-weight: 800;
+            line-height: 0.95;
+            letter-spacing: -0.03em;
+            opacity: 0;
+            animation: fadeUp 0.9s ease 0.4s forwards;
+        }
+
+        h1 .line1 { display: block; color: white; }
+        h1 .line2 {
+            display: block;
+            background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 28px;
+            line-height: 1.8;
+            opacity: 0;
+            animation: fadeUp 0.9s ease 0.6s forwards;
+        }
+        .subtitle span { color: var(--cyan); }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 0;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            animation: fadeUp 1s ease 1.2s forwards;
+        }
+        .scroll-hint::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 1px;
+            background: rgba(255,255,255,0.2);
         }
 
         section {
-            padding: 40px;
+            padding: 100px 0;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--cyan);
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        .section-label::before { content: '// '; }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 48px;
+            letter-spacing: -0.02em;
         }
 
         .card {
-            background: #1e293b;
-            padding: 20px;
-            margin: 20px auto;
-            width: 60%;
-            border-radius: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(0,245,255,0.06), transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .card:hover {
+            border-color: rgba(0, 245, 255, 0.4);
+            transform: translateY(-4px);
+            box-shadow: var(--glow);
+        }
+        .card:hover::before { opacity: 1; }
+        .card:hover::after { opacity: 1; }
+
+        .card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: white;
+        }
+        .card p {
+            color: rgba(255,255,255,0.55);
+            line-height: 1.8;
+            font-size: 0.95rem;
         }
 
-        a {
-            color: #38bdf8;
+        .project-card {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .tag-pill {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            padding: 4px 12px;
+            border-radius: 100px;
+            border: 1px solid rgba(0, 245, 255, 0.25);
+            color: var(--cyan);
+            background: rgba(0, 245, 255, 0.06);
+            letter-spacing: 0.05em;
+        }
+
+        .project-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: rgba(0, 245, 255, 0.1);
+            line-height: 1;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 600px) {
+            .about-grid { grid-template-columns: 1fr; }
+            .project-card { grid-template-columns: 1fr; }
+            h1 { font-size: 3.5rem; }
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .stat-card:hover {
+            border-color: rgba(0, 245, 255, 0.4);
+            box-shadow: var(--glow);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--cyan), var(--blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+            margin-top: 6px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .contact-links {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .contact-link {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 28px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             text-decoration: none;
+            color: white;
+            transition: all 0.3s;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.85rem;
+        }
+        .contact-link:hover {
+            border-color: rgba(0, 245, 255, 0.5);
+            background: rgba(0, 245, 255, 0.05);
+            transform: translateX(8px);
+            box-shadow: var(--glow);
+            color: var(--cyan);
+        }
+        .contact-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(0, 245, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .contact-link:hover .contact-icon {
+            background: rgba(0, 245, 255, 0.2);
+        }
+
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+        }
+
+        footer {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 40px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 0.1em;
+        }
+        footer span { color: var(--cyan); }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 32px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.8s forwards;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff88;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1:hover .line1 {
+            animation: glitch 0.4s ease;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 1px); text-shadow: 2px 0 var(--cyan); }
+            40% { transform: translate(2px, -1px); text-shadow: -2px 0 var(--purple); }
+            60% { transform: translate(-1px, 0); }
+            80% { transform: translate(1px, 1px); }
+            100% { transform: translate(0); }
+        }
+
+        nav {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            gap: 4px;
+            background: rgba(10, 22, 40, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 6px;
+        }
+        nav a {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 100px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        nav a:hover {
+            color: var(--cyan);
+            background: rgba(0, 245, 255, 0.1);
         }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Youssef Bouazza</h1>
-    <p>Étudiant en cybersécurité </p>
-</header>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursor-ring"></div>
+<div class="scanline"></div>
+<div class="grid-overlay"></div>
+<canvas id="canvas-bg"></canvas>
 
-<section>
-    <h2>À propos</h2>
-    <div class="card">
-        <p>J'ai une licence en science mathématique et informatique ,je suis en master gouvernanve en cybersécurité</p>
-    </div>
-</section>
+<nav>
+    <a href="#about">About</a>
+    <a href="#projects">Work</a>
+    <a href="#contact">Contact</a>
+</nav>
 
-<section>
-    <h2>Projets</h2>
-    <div class="card">
-        <h3>Application Menu QR sécurisé</h3>
-        <p>Développement backend MVC avec MFA et rate limiting.</p>
-    </div>
-</section>
+<main>
+    <header>
+        <div class="tag">Portfolio 2025</div>
+        <h1>
+            <span class="line1">Youssef</span>
+            <span class="line2">Bouazza</span>
+        </h1>
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            Disponible pour des missions
+        </div>
+        <p class="subtitle">
+            Étudiant en <span>Cybersécurité</span><br>
+            Développement Web Sécurisé · OWASP · Docker · MFA
+        </p>
+        <div class="scroll-hint">Scroll to explore</div>
+    </header>
 
-<section>
-    <h2>Contact</h2>
-    <div class="card">
-        <p>Email : tonemail@example.com</p>
-        <p>GitHub : <a href="#">Mon profil</a></p>
-    </div>
-</section>
+    <div class="divider"></div>
 
+    <section id="about">
+        <div class="section-label">01 — À propos</div>
+        <h2>Qui suis-je ?</h2>
+        <div class="about-grid">
+            <div class="stat-card">
+                <div class="stat-number">OWASP</div>
+                <div class="stat-label">Audit sécurité</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">MFA</div>
+                <div class="stat-label">Auth multi-facteur</div>
+            </div>
+            <div class="card" style="grid-column: 1 / -1; margin-bottom: 0;">
+                <p>Je suis passionné par la cybersécurité et le développement web sécurisé. Je travaille actuellement sur une application web avec audit OWASP complet, containerisation Docker, et authentification multi-facteur — avec pour objectif de construire des systèmes robustes et résistants aux menaces modernes.</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="projects">
+        <div class="section-label">02 — Projets</div>
+        <h2>Mes Réalisations</h2>
+
+        <div class="card">
+            <div class="project-card">
+                <div>
+                    <h3>Application Menu QR Sécurisé</h3>
+                    <p>Développement d'un backend MVC robuste intégrant une authentification multi-facteur, un système de rate limiting et une protection contre les attaques OWASP Top 10.</p>
+                    <div class="tags-list">
+                        <span class="tag-pill">MVC</span>
+                        <span class="tag-pill">MFA</span>
+                        <span class="tag-pill">Rate Limiting</span>
+                        <span class="tag-pill">Docker</span>
+                        <span class="tag-pill">OWASP</span>
+                    </div>
+                </div>
+                <div class="project-number">01</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="project-card">
+                <div>
+                    <h3>Audit de Sécurité Web</h3>
+                    <p>Analyse et audit complet d'une application web selon les standards OWASP, identification des vulnérabilités et mise en place de contre-mesures adaptées.</p>
+                    <div class="tags-list">
+                        <span class="tag-pill">Pentest</span>
+                        <span class="tag-pill">OWASP</span>
+                        <span class="tag-pill">Rapport</span>
+                    </div>
+                </div>
+                <div class="project-number">02</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="contact">
+        <div class="section-label">03 — Contact</div>
+        <h2>Me Contacter</h2>
+        <div class="contact-links">
+            <a href="mailto:tonemail@example.com" class="contact-link">
+                <div class="contact-icon">✉</div>
+                tonemail@example.com
+            </a>
+            <a href="#" class="contact-link">
+                <div class="contact-icon">⌥</div>
+                github.com/YoussefBouazza
+            </a>
+            <a href="#" class="contact-link">
+                <div class="contact-icon">in</div>
+                LinkedIn — Youssef Bouazza
+            </a>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>Conçu & développé par <span>Youssef Bouazza</span> · 2025</p>
+</footer>
+
+<script>
+    // CURSEUR PERSONNALISÉ
+    const cursor = document.getElementById('cursor');
+    const ring = document.getElementById('cursor-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => {
+        mx = e.clientX; my = e.clientY;
+        cursor.style.left = mx + 'px';
+        cursor.style.top = my + 'px';
+    });
+    (function animRing() {
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.left = rx + 'px';
+        ring.style.top = ry + 'px';
+        requestAnimationFrame(animRing);
+    })();
+    document.querySelectorAll('a, .card, nav a').forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            ring.style.width = '60px';
+            ring.style.height = '60px';
+            ring.style.opacity = '0.5';
+        });
+        el.addEventListener('mouseleave', () => {
+            ring.style.width = '36px';
+            ring.style.height = '36px';
+            ring.style.opacity = '1';
+        });
+    });
+
+    // LUMIÈRE QUI SUIT LA SOURIS SUR LES CARTES
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mousemove', e => {
+            const rect = card.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+            const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+            card.style.setProperty('--mx', x + '%');
+            card.style.setProperty('--my', y + '%');
+        });
+    });
+
+    // PARTICULES CANVAS
+    const canvas = document.getElementById('canvas-bg');
+    const ctx = canvas.getContext('2d');
+    let W, H, particles;
+
+    function resize() {
+        W = canvas.width = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }
+
+    class Particle {
+        constructor() { this.reset(); }
+        reset() {
+            this.x = Math.random() * W;
+            this.y = Math.random() * H;
+            this.size = Math.random() * 1.5 + 0.2;
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.speedY = (Math.random() - 0.5) * 0.3;
+            this.opacity = Math.random() * 0.6 + 0.1;
+            this.color = Math.random() > 0.7 ? '#00f5ff' : '#ffffff';
+            this.pulse = Math.random() * Math.PI * 2;
+        }
+        update() {
+            this.x += this.speedX;
+            this.y += this.speedY;
+            this.pulse += 0.02;
+            this.opacity = Math.sin(this.pulse) * 0.3 + 0.4;
+            if (this.x < 0 || this.x > W || this.y < 0 || this.y > H) this.reset();
+        }
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.opacity;
+            ctx.fillStyle = this.color;
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = this.size > 1 ? 6 : 0;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    function init() {
+        resize();
+        particles = Array.from({ length: 120 }, () => new Particle());
+    }
+
+    function drawConnections() {
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 100) {
+                    ctx.save();
+                    ctx.globalAlpha = (1 - dist / 100) * 0.08;
+                    ctx.strokeStyle = '#00f5ff';
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, W, H);
+        const grad = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, H*0.9);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(1, 'rgba(2, 8, 23, 0.5)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+        drawConnections();
+        particles.forEach(p => { p.update(); p.draw(); });
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+    window.addEventListener('resize', init);
+
+    // INTERACTION SOURIS AVEC LES PARTICULES
+    document.addEventListener('mousemove', e => {
+        particles.forEach(p => {
+            const dx = p.x - e.clientX;
+            const dy = p.y - e.clientY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 80) {
+                p.x += dx * 0.02;
+                p.y += dy * 0.02;
+            }
+        });
+    });
+
+    // SCROLL REVEAL
+    const sections = document.querySelectorAll('section');
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) e.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+    sections.forEach(s => observer.observe(s));
+
+    // SMOOTH SCROLL
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.querySelector(a.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+</script>
 </body>
 </html>
